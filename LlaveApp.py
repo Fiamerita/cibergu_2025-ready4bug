@@ -111,10 +111,10 @@ class PantallaLogin(Screen):
 
     def abrir_url(self, estado):
         if estado == "acceso_concedido":
-            webbrowser.open("https://www.google.es")
+            webbrowser.open("https://www.ceeiguadalajara.es/landing/cibergu-2025")
             Clock.schedule_once(lambda dt: setattr(self.manager, 'current', 'exito'), 0)
         else:
-            webbrowser.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            webbrowser.open("https://ellibrodepython.com/")
             Clock.schedule_once(lambda dt: setattr(self.manager, 'current', 'login'), 0)
 
     def on_leave(self):
