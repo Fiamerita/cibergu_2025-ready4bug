@@ -1,59 +1,94 @@
-# llavedeacceso.kv
-<LoginScreen>:
+# Define la pantalla de login
+<PantallaLogin>:
+    BoxLayout:
+        id: layout  # Este id permite acceder y modificar el layout desde Python
+        orientation: 'vertical'  # Los widgets se apilan verticalmente
+        padding: 40  # Espaciado interno
+        spacing: 20  # Espaciado entre widgets
+
+        Label:
+            text: "Iniciar sesión"  # Título de la pantalla
+            font_size: 28  # Tamaño de fuente grande
+
+        TextInput:
+            id: login_usuario  # Campo para el usuario
+            hint_text: "Usuario"  # Texto de ayuda
+            multiline: False  # Solo una línea
+
+        TextInput:
+            id: login_contraseña  # Campo para la contraseña
+            hint_text: "Contraseña"  # Texto de ayuda
+            password: True  # Oculta el texto
+            multiline: False  # Solo una línea
+
+        Label:
+            id: login_msg  # Mensaje de error o información
+            text: ""  # Inicialmente vacío
+            markup: True  # Permite colores en el texto
+            size_hint_y: None  # Altura fija
+            height: 30  # Altura del label
+
+        Button:
+            text: "Entrar"  # Botón para iniciar sesión
+            on_press: root.iniciar_sesion()  # Llama al método iniciar_sesion de la pantalla
+
+        Button:
+            text: "¿No tienes cuenta? Registrarse"  # Botón para ir a registro
+            on_press: app.root.current = "registro"  # Cambia a la pantalla de registro
+
+# Define la pantalla de registro
+<PantallaRegistro>:
     BoxLayout:
         orientation: 'vertical'
         padding: 40
         spacing: 20
 
         Label:
-            text: '🔐 Inicio de sesión'
+            text: "Registro de usuario"
             font_size: 28
-            size_hint_y: None
-            height: 60
 
         TextInput:
-            id: usuario
-            hint_text: 'Usuario'
+            id: usuario  # Campo para el usuario
+            hint_text: "Usuario"
             multiline: False
 
         TextInput:
-            id: contrasena
-            hint_text: 'Contraseña'
+            id: email  # Campo para el correo
+            hint_text: "Correo"
+            multiline: False
+
+        TextInput:
+            id: contraseña  # Campo para la contraseña
+            hint_text: "Contraseña"
             password: True
             multiline: False
 
         Label:
-            id: msg
-            text: ''
+            id: msg  # Mensaje de error o información
+            text: ""
             markup: True
             size_hint_y: None
             height: 30
 
         Button:
-            text: 'Iniciar sesión'
-            on_press: root.iniciar_sesion()
+            text: "Registrarse"  # Botón para registrar usuario
+            on_press: root.registrar()  # Llama al método registrar de la pantalla
 
-<QRScreen>:
+        Button:
+            text: "Volver a iniciar sesión"  # Botón para volver al login
+            on_press: app.root.current = "login"  # Cambia a la pantalla de login
+
+# Define la pantalla de éxito
+<PantallaExito>:
     BoxLayout:
         orientation: 'vertical'
         padding: 40
         spacing: 20
 
         Label:
-            text: '📷 Escanea el código QR'
-            font_size: 24
-            size_hint_y: None
-            height: 60
+            text: "¡Acceso concedido!"  # Mensaje de éxito
+            font_size: 28
 
-        Image:
-            id: qr_image
-            size_hint_y: 0.6
-            allow_stretch: True
-            keep_ratio: True
-
-        Label:
-            id: timer_label
-            text: 'Tiempo restante: 30 segundos'
-            font_size: 18
-            size_hint_y: None
-            height: 30
+        Button:
+            text: "Volver al login"  # Botón para volver al login
+            on_press: app.root.current = "login"  # Cambia a la pantalla de login
