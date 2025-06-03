@@ -1,93 +1,82 @@
-from flask import Flask, request, jsonify
-import uuid
+# LlaveApp.py
+from kivy.app import App
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.image import Image
+from kivy.clock import Clock
+from kivy.uix.label import Label
+from kivy.core.image import Image as CoreImage
 import qrcode
-import os
-import json
+import time
+import io
 import socket
+import requests
 
-app = Flask(__name__)
+class LoginScreen(Screen):
+    def iniciar_sesion(self):
+        u = self.ids.usuario.text.strip()
+        p = self.ids.contrasena.text.strip()
+        if not u or not p:
+            self.ids.msg.text = "[color=ff0000]Usuario y contraseña requeridos[/color]"
+            return
 
-TOKENS_VALIDOS = set()
-TOKENS_USADOS = set()
-USUARIOS_FILE = "usuarios.json"
+        def enviar():
+            try:
+                ip = self.obtener_ip()
+                url = f"https://{ip}:5000/generar_token"
+                r = requests.post(url, json={"usuario": u, "contrasena": p}, verify=False)
+                if r.status_code == 200:
+                    data = r.json()
+                    self.manager.get_screen("qr").inicializar_qr(data["token"], ip)
+                    self.manager.current = "qr"
+                else:
+                    self.ids.msg.text = f"[color=ff0000]{r.json().get('error', 'Error de autenticación')}[/color]"
+            except Exception as e:
+                self.ids.msg.text = f"[color=ff0000]Error: {e}[/color]"
 
-def cargar_usuarios():
-    if not os.path.exists(USUARIOS_FILE):
-        return []
-    with open(USUARIOS_FILE, "r") as f:
-        return json.load(f)
+        from threading import Thread
+        Thread(target=enviar, daemon=True).start()
 
-def guardar_usuarios(usuarios):
-    with open(USUARIOS_FILE, "w") as f:
-        json.dump(usuarios, f, indent=4)
+    def obtener_ip(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(('10.255.255.255', 1))
+            return s.getsockname()[0]
+        except:
+            return '127.0.0.1'
+        finally:
+            s.close()
 
-@app.route('/registro', methods=['POST'])
-def registro():
-    datos = request.json
-    usuario = datos.get("usuario")
-    contraseña = datos.get("contraseña")
-    email = datos.get("email")
+class QRScreen(Screen):
+    def inicializar_qr(self, token, ip):
+        self.token_actual = token
+        self.ip = ip
+        self.contador = 30
+        self.mostrar_qr()
+        self.ids.timer_label.text = f"Te quedan: {self.contador} segundos"
+        self.evento_contador = Clock.schedule_interval(self.actualizar_contador, 1)
 
-    if not usuario or not contraseña or not email:
-        return jsonify({"exito": False, "mensaje": "Faltan datos"}), 400
+    def mostrar_qr(self):
+        url_qr = f"https://{self.ip}:5000/validar_token?token={self.token_actual}"
+        img = qrcode.make(url_qr)
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+        self.ids.qr_image.texture = CoreImage(buffer, ext='png').texture
 
-    usuarios = cargar_usuarios()
-    if any(u["usuario"] == usuario for u in usuarios):
-        return jsonify({"exito": False, "mensaje": "Usuario ya existe"}), 409
+    def actualizar_contador(self, dt):
+        self.contador -= 1
+        if self.contador <= 0:
+            Clock.unschedule(self.evento_contador)
+            self.ids.timer_label.text = "Token caducado"
+        else:
+            self.ids.timer_label.text = f"Te quedan: {self.contador} segundos"
 
-    usuarios.append({"usuario": usuario, "contraseña": contraseña, "email": email})
-    guardar_usuarios(usuarios)
-
-    return jsonify({"exito": True, "mensaje": "Registro exitoso"})
-
-@app.route('/inicio_sesion', methods=['POST'])
-def iniciar_sesion():
-    datos = request.json
-    usuario = datos.get("usuario")
-    contraseña = datos.get("contraseña")
-
-    usuarios = cargar_usuarios()
-    for u in usuarios:
-        if u["usuario"] == usuario and u["contraseña"] == contraseña:
-            return jsonify({"exito": True, "mensaje": "Inicio de sesión exitoso"})
-    return jsonify({"exito": False, "mensaje": "Usuario o contraseña incorrectos"}), 401
-
-def obtener_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-    finally:
-        s.close()
-
-@app.route('/generar_qr')
-def generar_qr():
-    token = str(uuid.uuid4())
-    TOKENS_VALIDOS.add(token)
-    url = f"http://{obtener_ip()}:5000/?token={token}"
-    qrcode.make(url).save("qr_token.png")
-    return jsonify({"token": token, "url": url})
-
-@app.route('/')
-def procesar_token():
-    token = request.args.get('token')
-    if not token:
-        return "Token no proporcionado."
-    if token in TOKENS_VALIDOS:
-        TOKENS_VALIDOS.remove(token)
-        TOKENS_USADOS.add(token)
-        return "Token válido. Autenticación confirmada. Puedes cerrar esta pestaña."
-    else:
-        return "Token inválido o ya usado."
-
-@app.route('/estado_token/<token>')
-def estado_token(token):
-    if token in TOKENS_VALIDOS:
-        return jsonify({"acceso": "pendiente"})
-    elif token in TOKENS_USADOS:
-        return jsonify({"acceso": "concedido"})
-    else:
-        return jsonify({"acceso": "denegado"})
+class LlaveDeAccesoApp(App):
+    def build(self):
+        sm = ScreenManager()
+        sm.add_widget(LoginScreen(name="login"))
+        sm.add_widget(QRScreen(name="qr"))
+        return sm
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    LlaveDeAccesoApp().run()

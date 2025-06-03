@@ -8,8 +8,6 @@ import threading
 import time
 import webbrowser
 
-import os
-
 class PantallaRegistro(Screen):
     def registrar(self):
         u = self.ids.usuario.text.strip()
@@ -66,6 +64,7 @@ class PantallaLogin(Screen):
 
     def generar_qr(self):
         self._activo = True
+        self.expira_en = 30
         self.ids.layout.clear_widgets()
         self.ids.layout.add_widget(Label(text="Generando código QR...", font_size=24))
 
@@ -76,6 +75,7 @@ class PantallaLogin(Screen):
                 self.token = data.get('token')
                 if self.token:
                     Clock.schedule_once(lambda dt: self.mostrar_qr(), 0)
+                    Clock.schedule_interval(self.actualizar_temporizador, 1)
                     threading.Thread(target=self.verificar_token, daemon=True).start()
                 else:
                     Clock.schedule_once(lambda dt: self.mostrar_error("No se pudo obtener el token"), 0)
@@ -87,6 +87,17 @@ class PantallaLogin(Screen):
     def mostrar_qr(self):
         self.ids.layout.clear_widgets()
         self.ids.layout.add_widget(Image(source='qr_token.png'))
+
+    def actualizar_temporizador(self, dt):
+        self.expira_en -= 1
+        if self.expira_en <= 0:
+            self._activo = False
+            self.ids.layout.clear_widgets()
+            self.ids.layout.add_widget(Label(text="Token caducado", color=(1, 0, 0, 1), font_size=20))
+            return False
+        else:
+            self.ids.temporizador.text = f"Tiempo restante: {self.expira_en}s"
+            return True
 
     def mostrar_error(self, msg):
         self.ids.layout.clear_widgets()

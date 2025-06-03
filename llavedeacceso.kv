@@ -1,91 +1,59 @@
-<PantallaLogin>:
+# llavedeacceso.kv
+<LoginScreen>:
     BoxLayout:
-        id: layout
         orientation: 'vertical'
         padding: 40
         spacing: 20
 
         Label:
-            text: "Iniciar sesión"
+            text: '🔐 Inicio de sesión'
             font_size: 28
-
-        TextInput:
-            id: login_usuario
-            hint_text: "Usuario"
-            multiline: False
-
-        TextInput:
-            id: login_contraseña
-            hint_text: "Contraseña"
-            password: True
-            multiline: False
-
-        Label:
-            id: login_msg
-            text: ""
-            markup: True
             size_hint_y: None
-            height: 30
-
-        Button:
-            text: "Entrar"
-            on_press: root.iniciar_sesion()
-
-        Button:
-            text: "¿No tienes cuenta? Registrarse"
-            on_press: app.root.current = "registro"
-
-<PantallaRegistro>:
-    BoxLayout:
-        orientation: 'vertical'
-        padding: 40
-        spacing: 20
-
-        Label:
-            text: "Registro de usuario"
-            font_size: 28
+            height: 60
 
         TextInput:
             id: usuario
-            hint_text: "Usuario"
+            hint_text: 'Usuario'
             multiline: False
 
         TextInput:
-            id: email
-            hint_text: "Correo"
-            multiline: False
-
-        TextInput:
-            id: contraseña
-            hint_text: "Contraseña"
+            id: contrasena
+            hint_text: 'Contraseña'
             password: True
             multiline: False
 
         Label:
             id: msg
-            text: ""
+            text: ''
             markup: True
             size_hint_y: None
             height: 30
 
         Button:
-            text: "Registrarse"
-            on_press: root.registrar()
+            text: 'Iniciar sesión'
+            on_press: root.iniciar_sesion()
 
-        Button:
-            text: "Volver a iniciar sesión"
-            on_press: app.root.current = "login"
-
-<PantallaExito>:
+<QRScreen>:
     BoxLayout:
         orientation: 'vertical'
         padding: 40
         spacing: 20
 
         Label:
-            text: "¡Acceso concedido!"
-            font_size: 28
+            text: '📷 Escanea el código QR'
+            font_size: 24
+            size_hint_y: None
+            height: 60
 
-        Button:
-            text: "Volver al login"
-            on_press: app.root.current = "login"
+        Image:
+            id: qr_image
+            size_hint_y: 0.6
+            allow_stretch: True
+            keep_ratio: True
+
+        Label:
+            id: timer_label
+            text: 'Tiempo restante: 30 segundos'
+            font_size: 18
+            size_hint_y: None
+            height: 30
