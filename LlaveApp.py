@@ -1,50 +1,43 @@
-from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager, Screen
+# LlaveApp.py
+from kivymd.app import MDApp
+from kivymd.uix.screen import MDScreen
+from kivymd.uix.screenmanager import MDScreenManager
+from kivymd.uix.button import MDRaisedButton
+from kivymd.uix.textfield import MDTextField
+from kivymd.uix.label import MDLabel
+from kivy.uix.screenmanager import FadeTransition
 from kivy.uix.image import Image
-from kivy.uix.label import Label
 from kivy.clock import Clock
-import requests
-import threading
-import time
-import webbrowser
+from kivy.lang import Builder
+import requests, threading, base64
+from io import BytesIO
+from kivy.core.image import Image as CoreImage
 
-import os
 
-class PantallaRegistro(Screen):
-    def registrar(self):
+class SplashScreen(MDScreen):
+    def on_enter(self):
+        Clock.schedule_once(self.ir_a_login, 3)
+
+    def ir_a_login(self, *args):
+        self.manager.transition.direction = 'left'
+        self.manager.current = "login"
+
+
+class LoginScreen(MDScreen):
+    def on_pre_enter(self):
+        try:
+            self.ids.msg.text = ""
+            self.ids.usuario.text = ""
+            self.ids.contraseña.text = ""
+        except Exception as e:
+            print(f"Error al limpiar campos en on_pre_enter: {e}")
+
+    def login(self):
         u = self.ids.usuario.text.strip()
         p = self.ids.contraseña.text.strip()
-        e = self.ids.email.text.strip()
-
-        if not u or not p or not e:
-            self.mostrar("Todos los campos son obligatorios", False)
-            return
-
-        def enviar():
-            try:
-                r = requests.post(
-                    "http://localhost:5000/registro",
-                    json={"usuario": u, "contraseña": p, "email": e},
-                    timeout=5
-                )
-                resp = r.json()
-                Clock.schedule_once(lambda dt: self.mostrar(resp.get("mensaje", "Error"), resp.get("exito", False)), 0)
-            except Exception:
-                Clock.schedule_once(lambda dt: self.mostrar("Error de conexión", False), 0)
-
-        threading.Thread(target=enviar, daemon=True).start()
-
-    def mostrar(self, msg, exito):
-        color = "00aa00" if exito else "ff0000"
-        self.ids.msg.text = f"[color={color}]{msg}[/color]"
-
-class PantallaLogin(Screen):
-    def iniciar_sesion(self):
-        u = self.ids.login_usuario.text.strip()
-        p = self.ids.login_contraseña.text.strip()
 
         if not u or not p:
-            self.mostrar("Usuario y contraseña requeridos")
+            self.ids.msg.text = "Usuario y contraseña requeridos"
             return
 
         def enviar():
@@ -54,85 +47,58 @@ class PantallaLogin(Screen):
                     json={"usuario": u, "contraseña": p},
                     timeout=5
                 )
-                resp = r.json()
-                if resp.get("exito"):
-                    Clock.schedule_once(lambda dt: self.generar_qr(), 0)
+                data = r.json()
+                if data.get("exito"):
+                    Clock.schedule_once(lambda dt: self.obtener_qr(), 0)
                 else:
-                    Clock.schedule_once(lambda dt: self.mostrar(resp.get("mensaje", "Error")), 0)
-            except Exception:
-                Clock.schedule_once(lambda dt: self.mostrar("Error de conexión"), 0)
+                    mensaje = data.get("mensaje", "Credenciales incorrectas")
+                    Clock.schedule_once(lambda dt: setattr(self.ids.msg, 'text', mensaje), 0)
+            except Exception as e:
+                print(f"Error en login: {e}")
+                Clock.schedule_once(lambda dt: setattr(self.ids.msg, 'text', "Error de conexión"), 0)
 
         threading.Thread(target=enviar, daemon=True).start()
 
-    def generar_qr(self):
-        self._activo = True
-        self.ids.layout.clear_widgets()
-        self.ids.layout.add_widget(Label(text="Generando código QR...", font_size=24))
-
-        def obtener_qr():
+    def obtener_qr(self):
+        def solicitar():
             try:
-                r = requests.get('http://localhost:5000/generar_qr', timeout=5)
+                r = requests.get("http://localhost:5000/generar_qr", timeout=5)
                 data = r.json()
-                self.token = data.get('token')
-                if self.token:
-                    Clock.schedule_once(lambda dt: self.mostrar_qr(), 0)
-                    threading.Thread(target=self.verificar_token, daemon=True).start()
-                else:
-                    Clock.schedule_once(lambda dt: self.mostrar_error("No se pudo obtener el token"), 0)
-            except Exception:
-                Clock.schedule_once(lambda dt: self.mostrar_error("Error: no se conecta al servidor"), 0)
+                b64 = data.get("qr_base64")
+                if b64:
+                    img = BytesIO(base64.b64decode(b64))
+                    core_img = CoreImage(img, ext='png')
+                    Clock.schedule_once(lambda dt: self.mostrar_qr(core_img.texture), 0)
+            except:
+                Clock.schedule_once(lambda dt: setattr(self.ids.msg, 'text', "Error al generar QR"), 0)
 
-        threading.Thread(target=obtener_qr, daemon=True).start()
+        threading.Thread(target=solicitar, daemon=True).start()
 
-    def mostrar_qr(self):
-        self.ids.layout.clear_widgets()
-        self.ids.layout.add_widget(Image(source='qr_token.png'))
+    def mostrar_qr(self, texture):
+        self.manager.transition.direction = 'left'
+        self.manager.current = "qr"
+        self.manager.get_screen("qr").mostrar_imagen(texture)
 
-    def mostrar_error(self, msg):
-        self.ids.layout.clear_widgets()
-        self.ids.layout.add_widget(Label(text=msg, color=(1, 0, 0, 1), font_size=20))
 
-    def verificar_token(self):
-        while getattr(self, "_activo", False):
-            try:
-                r = requests.get(f'http://localhost:5000/estado_token/{self.token}', timeout=5)
-                estado = r.json().get('acceso')
-                if estado == 'concedido':
-                    self._activo = False
-                    Clock.schedule_once(lambda dt: self.abrir_url("acceso_concedido"), 0)
-                    break
-                elif estado == 'denegado':
-                    self._activo = False
-                    Clock.schedule_once(lambda dt: self.abrir_url("acceso_denegado"), 0)
-                    break
-            except Exception:
-                pass
-            time.sleep(2)
+class QRScreen(MDScreen):
+    def mostrar_imagen(self, texture):
+        self.ids.qr.texture = texture
 
-    def abrir_url(self, estado):
-        if estado == "acceso_concedido":
-            webbrowser.open("https://www.ceeiguadalajara.es/landing/cibergu-2025")
-            Clock.schedule_once(lambda dt: setattr(self.manager, 'current', 'exito'), 0)
-        else:
-            webbrowser.open("https://ellibrodepython.com/")
-            Clock.schedule_once(lambda dt: setattr(self.manager, 'current', 'login'), 0)
+    def volver_login(self):
+        self.manager.transition.direction = 'right'
+        self.manager.current = "login"
 
-    def on_leave(self):
-        self._activo = False
 
-    def mostrar(self, msg):
-        self.ids.login_msg.text = f"[color=ff0000]{msg}[/color]"
-
-class PantallaExito(Screen):
-    pass
-
-class LlaveDeAccesoApp(App):
+class LlaveApp(MDApp):
     def build(self):
-        sm = ScreenManager()
-        sm.add_widget(PantallaLogin(name='login'))
-        sm.add_widget(PantallaRegistro(name='registro'))
-        sm.add_widget(PantallaExito(name='exito'))
+        Builder.load_file("llavedeacceso.kv")  # 👈 Carga manual del .kv
+        sm = MDScreenManager(transition=FadeTransition(duration=0.4))
+        sm.add_widget(SplashScreen(name="splash"))
+        sm.add_widget(LoginScreen(name="login"))
+        sm.add_widget(QRScreen(name="qr"))
+        sm.current = "splash"
         return sm
 
+
 if __name__ == '__main__':
-    LlaveDeAccesoApp().run()
+    LlaveApp().run()

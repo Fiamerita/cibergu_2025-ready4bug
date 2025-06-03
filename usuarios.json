@@ -1,7 +1,12 @@
 [
-    {
-        "usuario": "admin",
-        "contraseña": "12345",
-        "correo": "admin@gmail.com"
-    }
+  {
+    "usuario": "admin",
+    "contraseña": "admin",
+    "email": "admin@demo.com"
+  },
+  {
+    "usuario": "test",
+    "contraseña": "1234",
+    "email": "test@demo.com"
+  }
 ]
