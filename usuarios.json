@@ -1,10 +1,12 @@
 [
     {
+        //ejemplo de usuario sin contraseña encriptada
         "usuario": "admin",
         "contrase\u00c3\u00b1a": "12345",
         "correo": "admin@gmail.com"
     },
     {
+        //ejemplo de usuario con contraseña encriptada con bcrypt
         "usuario": "admin2",
         "contrase\u00f1a": "$2b$12$jJN5f/qhBHIMM4FsLH5x5OQTt9RJdxkVkBKazoenDtQZxMAHkZl9e",
         "email": "admin2@gmail.com"

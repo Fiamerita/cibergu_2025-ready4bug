@@ -4,7 +4,7 @@ import qrcode
 import os
 import json
 import socket
-import bcrypt  # <-- Añadido
+import bcrypt 
 
 app = Flask(__name__)
 
