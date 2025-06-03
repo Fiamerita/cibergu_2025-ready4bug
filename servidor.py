@@ -4,7 +4,12 @@ import qrcode
 import os
 import json
 import socket
+<<<<<<< HEAD
 import bcrypt 
+=======
+from io import BytesIO
+import base64
+>>>>>>> 19cd312315400a0130afe31e04ae241f30884bcc
 
 app = Flask(__name__)
 
@@ -12,15 +17,18 @@ TOKENS_VALIDOS = set()
 TOKENS_USADOS = set()
 USUARIOS_FILE = "usuarios.json"
 
+
 def cargar_usuarios():
     if not os.path.exists(USUARIOS_FILE):
         return []
-    with open(USUARIOS_FILE, "r") as f:
+    with open(USUARIOS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 def guardar_usuarios(usuarios):
-    with open(USUARIOS_FILE, "w") as f:
-        json.dump(usuarios, f, indent=4)
+    with open(USUARIOS_FILE, "w", encoding="utf-8") as f:
+        json.dump(usuarios, f, indent=4, ensure_ascii=False)
+
 
 @app.route('/registro', methods=['POST'])
 def registro():
@@ -33,7 +41,7 @@ def registro():
         return jsonify({"exito": False, "mensaje": "Faltan datos"}), 400
 
     usuarios = cargar_usuarios()
-    if any(u["usuario"] == usuario for u in usuarios):
+    if any(u.get("usuario") == usuario for u in usuarios):
         return jsonify({"exito": False, "mensaje": "Usuario ya existe"}), 409
 
     hash_bytes = bcrypt.hashpw(contraseña.encode(), bcrypt.gensalt())
@@ -48,21 +56,35 @@ def registro():
 
     return jsonify({"exito": True, "mensaje": "Registro exitoso"})
 
+
 @app.route('/inicio_sesion', methods=['POST'])
 def iniciar_sesion():
-    datos = request.json
+    datos = request.get_json(force=True)
     usuario = datos.get("usuario")
     contraseña = datos.get("contraseña")
+    print(f"Usuario recibido: '{usuario}'")
+    print(f"Contraseña recibida: '{contraseña}'")
+
+    if not usuario or not contraseña:
+        return jsonify({"exito": False, "mensaje": "Faltan credenciales"}), 400
 
     usuarios = cargar_usuarios()
+    print(f"Usuarios en base: {usuarios}")
     for u in usuarios:
+<<<<<<< HEAD
         if u["usuario"] == usuario:
             hash_guardado = u["contraseña"].encode()
             if bcrypt.checkpw(contraseña.encode(), hash_guardado):
                 return jsonify({"exito": True, "mensaje": "Inicio de sesión exitoso"})
             break  # Si el usuario coincide pero la contraseña no, se detiene aquí
 
+=======
+        print(f"Comparando con: {u}")
+        if u.get("usuario") == usuario and u.get("contraseña") == contraseña:
+            return jsonify({"exito": True, "mensaje": "Inicio de sesión exitoso"})
+>>>>>>> 19cd312315400a0130afe31e04ae241f30884bcc
     return jsonify({"exito": False, "mensaje": "Usuario o contraseña incorrectos"}), 401
+
 
 def obtener_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -72,13 +94,20 @@ def obtener_ip():
     finally:
         s.close()
 
+
 @app.route('/generar_qr')
 def generar_qr():
     token = str(uuid.uuid4())
     TOKENS_VALIDOS.add(token)
     url = f"http://{obtener_ip()}:5000/?token={token}"
-    qrcode.make(url).save("qr_token.png")
-    return jsonify({"token": token, "url": url})
+    img = qrcode.make(url)
+
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+    return jsonify({"token": token, "url": url, "qr_base64": img_b64})
+
 
 @app.route('/')
 def procesar_token():
@@ -92,6 +121,7 @@ def procesar_token():
     else:
         return "Token inválido o ya usado."
 
+
 @app.route('/estado_token/<token>')
 def estado_token(token):
     if token in TOKENS_VALIDOS:
@@ -100,6 +130,7 @@ def estado_token(token):
         return jsonify({"acceso": "concedido"})
     else:
         return jsonify({"acceso": "denegado"})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

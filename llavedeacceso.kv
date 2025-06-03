@@ -1,91 +1,74 @@
-<PantallaLogin>:
-    BoxLayout:
-        id: layout
-        orientation: 'vertical'
+<SplashScreen>:
+    name: "splash"
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: 20
+        padding: 40
+        pos_hint: {"center_y": 0.5}
+        MDLabel:
+            text: "Ready4Bug"
+            halign: "center"
+            font_style: "H3"
+            theme_text_color: "Custom"
+            text_color: 0.2, 0.6, 0.9, 1
+        Image:
+            source: "ready4bug_logo.png"
+            size_hint_y: 0.6
+        MDLabel:
+            text: "Secure QR Access"
+            halign: "center"
+            theme_text_color: "Secondary"
+
+<LoginScreen>:
+    name: "login"
+    MDBoxLayout:
+        orientation: "vertical"
         padding: 40
         spacing: 20
+        MDLabel:
+            text: "Inicio de Sesión"
+            halign: "center"
+            font_style: "H4"
 
-        Label:
-            text: "Iniciar sesión"
-            font_size: 28
-
-        TextInput:
-            id: login_usuario
-            hint_text: "Usuario"
-            multiline: False
-
-        TextInput:
-            id: login_contraseña
-            hint_text: "Contraseña"
-            password: True
-            multiline: False
-
-        Label:
-            id: login_msg
-            text: ""
-            markup: True
-            size_hint_y: None
-            height: 30
-
-        Button:
-            text: "Entrar"
-            on_press: root.iniciar_sesion()
-
-        Button:
-            text: "¿No tienes cuenta? Registrarse"
-            on_press: app.root.current = "registro"
-
-<PantallaRegistro>:
-    BoxLayout:
-        orientation: 'vertical'
-        padding: 40
-        spacing: 20
-
-        Label:
-            text: "Registro de usuario"
-            font_size: 28
-
-        TextInput:
+        MDTextField:
             id: usuario
             hint_text: "Usuario"
-            multiline: False
+            icon_right: "account"
+            mode: "rectangle"
 
-        TextInput:
-            id: email
-            hint_text: "Correo"
-            multiline: False
-
-        TextInput:
+        MDTextField:
             id: contraseña
             hint_text: "Contraseña"
+            icon_right: "lock"
             password: True
-            multiline: False
+            mode: "rectangle"
 
-        Label:
+        MDLabel:
             id: msg
             text: ""
-            markup: True
-            size_hint_y: None
-            height: 30
+            halign: "center"
+            theme_text_color: "Error"
 
-        Button:
-            text: "Registrarse"
-            on_press: root.registrar()
+        MDRaisedButton:
+            text: "Iniciar sesión"
+            pos_hint: {"center_x": 0.5}
+            on_release: root.login()
 
-        Button:
-            text: "Volver a iniciar sesión"
-            on_press: app.root.current = "login"
-
-<PantallaExito>:
-    BoxLayout:
-        orientation: 'vertical'
-        padding: 40
+<QRScreen>:
+    name: "qr"
+    MDBoxLayout:
+        orientation: "vertical"
         spacing: 20
-
-        Label:
-            text: "¡Acceso concedido!"
-            font_size: 28
-
-        Button:
-            text: "Volver al login"
-            on_press: app.root.current = "login"
+        padding: 30
+        MDLabel:
+            text: "Escanea el código QR"
+            halign: "center"
+            font_style: "H5"
+        Image:
+            id: qr
+            source: ""
+            size_hint_y: 0.8
+        MDRaisedButton:
+            text: "Volver"
+            pos_hint: {"center_x": 0.5}
+            on_release: root.volver_login()

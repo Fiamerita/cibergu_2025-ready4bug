@@ -1,4 +1,5 @@
 [
+<<<<<<< HEAD
     {
         "usuario": "admin",
         "contrase\u00f1a": "$2b$12$jJN5f/qhBHIMM4FsLH5x5OQTt9RJdxkVkBKazoenDtQZxMAHkZl9e",
@@ -10,3 +11,16 @@
         "email": "ismael@gmail.com"
     }
 ]
+=======
+  {
+    "usuario": "admin",
+    "contraseña": "admin",
+    "email": "admin@demo.com"
+  },
+  {
+    "usuario": "test",
+    "contraseña": "1234",
+    "email": "test@demo.com"
+  }
+]
+>>>>>>> 19cd312315400a0130afe31e04ae241f30884bcc
