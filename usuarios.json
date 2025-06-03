@@ -1,7 +1,17 @@
 [
     {
         "usuario": "admin",
-        "contraseña": "12345",
+        "contrase\u00c3\u00b1a": "12345",
         "correo": "admin@gmail.com"
+    },
+    {
+        "usuario": "admin2",
+        "contrase\u00f1a": "$2b$12$jJN5f/qhBHIMM4FsLH5x5OQTt9RJdxkVkBKazoenDtQZxMAHkZl9e",
+        "email": "admin2@gmail.com"
+    },
+    {
+        "usuario": "ismael",
+        "contrase\u00f1a": "$2b$12$GDcZnwIo2PAdc85MVnwSoew75yFrxpeH7KE2ZpT4HIPbxNz92tPQe",
+        "email": "ismael@gmail.com"
     }
 ]
