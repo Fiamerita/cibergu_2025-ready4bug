@@ -4,6 +4,7 @@ import qrcode
 import os
 import json
 import socket
+import bcrypt 
 
 app = Flask(__name__)
 
@@ -35,7 +36,14 @@ def registro():
     if any(u["usuario"] == usuario for u in usuarios):
         return jsonify({"exito": False, "mensaje": "Usuario ya existe"}), 409
 
-    usuarios.append({"usuario": usuario, "contraseña": contraseña, "email": email})
+    hash_bytes = bcrypt.hashpw(contraseña.encode(), bcrypt.gensalt())
+    hash_str = hash_bytes.decode()
+
+    usuarios.append({
+        "usuario": usuario,
+        "contraseña": hash_str,
+        "email": email
+    })
     guardar_usuarios(usuarios)
 
     return jsonify({"exito": True, "mensaje": "Registro exitoso"})
@@ -48,8 +56,12 @@ def iniciar_sesion():
 
     usuarios = cargar_usuarios()
     for u in usuarios:
-        if u["usuario"] == usuario and u["contraseña"] == contraseña:
-            return jsonify({"exito": True, "mensaje": "Inicio de sesión exitoso"})
+        if u["usuario"] == usuario:
+            hash_guardado = u["contraseña"].encode()
+            if bcrypt.checkpw(contraseña.encode(), hash_guardado):
+                return jsonify({"exito": True, "mensaje": "Inicio de sesión exitoso"})
+            break  # Si el usuario coincide pero la contraseña no, se detiene aquí
+
     return jsonify({"exito": False, "mensaje": "Usuario o contraseña incorrectos"}), 401
 
 def obtener_ip():
